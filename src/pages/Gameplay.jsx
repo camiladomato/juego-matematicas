@@ -5,6 +5,7 @@ import { generateQuestion } from '../data/worldsData';
 import HeaderHUD from '../components/layout/HeaderHUD';
 import Button3D from '../components/ui/Button3D';
 import VisualHint from '../components/game/VisualHint';
+import ResultModal from '../components/game/ResultModal';
 
 export default function Gameplay({ onCompleteLevel, onBackToMap }) {
   // Estado global de Zustand
@@ -15,6 +16,7 @@ export default function Gameplay({ onCompleteLevel, onBackToMap }) {
     addError,
     lives,
     isGameOver,
+    resetGame,
   } = useGameStore();
 
   // Estados locales del juego
@@ -23,7 +25,10 @@ export default function Gameplay({ onCompleteLevel, onBackToMap }) {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [feedback, setFeedback] = useState(null); // 'correct' | 'wrong'
   const [questionCount, setQuestionCount] = useState(0);
-  const totalQuestionsInLevel = 5; // Cantidad de preguntas por nivel
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [isLevelSuccess, setIsLevelSuccess] = useState(false);
+
+  const totalQuestionsInLevel = 5;
 
   // Cargar una nueva pregunta
   const loadNextQuestion = () => {
@@ -34,14 +39,22 @@ export default function Gameplay({ onCompleteLevel, onBackToMap }) {
     setFeedback(null);
   };
 
-  // Cargar primera pregunta al iniciar
+  // Cargar primera pregunta al iniciar o al reiniciar nivel
   useEffect(() => {
     loadNextQuestion();
   }, [currentWorld, currentLevel]);
 
-  // Manejar respuesta elegida por el niño
+  // Manejar si el niño se queda sin vidas
+  useEffect(() => {
+    if (isGameOver) {
+      setIsLevelSuccess(false);
+      setShowResultModal(true);
+    }
+  }, [isGameOver]);
+
+  // Manejar respuesta elegida
   const handleSelectOption = (option) => {
-    if (feedback !== null) return; // Evita clics repetidos durante la animación
+    if (feedback !== null || showResultModal) return;
 
     setSelectedAnswer(option);
 
@@ -51,8 +64,9 @@ export default function Gameplay({ onCompleteLevel, onBackToMap }) {
 
       setTimeout(() => {
         if (questionCount + 1 >= totalQuestionsInLevel) {
-          // Completó con éxito todas las preguntas del nivel
-          onCompleteLevel && onCompleteLevel();
+          // Completó todas las preguntas del nivel con éxito
+          setIsLevelSuccess(true);
+          setShowResultModal(true);
         } else {
           setQuestionCount((prev) => prev + 1);
           loadNextQuestion();
@@ -69,10 +83,28 @@ export default function Gameplay({ onCompleteLevel, onBackToMap }) {
     }
   };
 
+  // Acciones del ResultModal
+  const handleNextLevel = () => {
+    setShowResultModal(false);
+    setQuestionCount(0);
+    if (onCompleteLevel) {
+      onCompleteLevel();
+    } else {
+      loadNextQuestion();
+    }
+  };
+
+  const handleRetry = () => {
+    resetGame();
+    setShowResultModal(false);
+    setQuestionCount(0);
+    loadNextQuestion();
+  };
+
   if (!question) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-slate-900 text-white flex flex-col justify-between p-4 max-w-2xl mx-auto select-none">
+    <div className="min-h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-slate-900 text-white flex flex-col justify-between p-4 max-w-2xl mx-auto select-none relative">
       {/* 1. BARRA SUPERIOR (HUD) */}
       <HeaderHUD />
 
@@ -82,7 +114,7 @@ export default function Gameplay({ onCompleteLevel, onBackToMap }) {
         <div className="w-full bg-blue-950/80 rounded-full h-3 border border-blue-700/60 mb-6 overflow-hidden">
           <div
             className="bg-gradient-to-r from-amber-400 to-green-400 h-full transition-all duration-500 rounded-full"
-            style={{ width: `${((questionCount) / totalQuestionsInLevel) * 100}%` }}
+            style={{ width: `${(questionCount / totalQuestionsInLevel) * 100}%` }}
           />
         </div>
 
@@ -157,7 +189,7 @@ export default function Gameplay({ onCompleteLevel, onBackToMap }) {
                 variant={variant}
                 size="lg"
                 onClick={() => handleSelectOption(option)}
-                disabled={feedback !== null}
+                disabled={feedback !== null || showResultModal}
                 className="text-3xl py-6"
               >
                 {option}
@@ -167,7 +199,7 @@ export default function Gameplay({ onCompleteLevel, onBackToMap }) {
         </div>
       </main>
 
-      {/* 3. PIE DE PÁGINA / BARRAS DE AYUDA Y NAVEGACIÓN */}
+      {/* 3. PIE DE PÁGINA */}
       <footer className="w-full flex justify-between items-center pt-4">
         <Button3D
           variant="purple"
@@ -185,6 +217,17 @@ export default function Gameplay({ onCompleteLevel, onBackToMap }) {
           🗺️ Volver al Mapa
         </Button3D>
       </footer>
+
+      {/* MODAL DE RESULTADOS (VICTORIA O DERROTA) */}
+      <ResultModal
+        isOpen={showResultModal}
+        isSuccess={isLevelSuccess}
+        stars={lives >= 3 ? 3 : lives === 2 ? 2 : 1}
+        score={50}
+        onNextLevel={handleNextLevel}
+        onRetry={handleRetry}
+        onHome={onBackToMap}
+      />
     </div>
   );
 }
