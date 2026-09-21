@@ -1,51 +1,50 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { soundFx } from '../../utils/sound';
 
 export default function Button3D({
   children,
   onClick,
-  variant = 'orange', // 'orange', 'green', 'blue', 'yellow', 'red', 'purple'
-  size = 'md',        // 'sm', 'md', 'lg', 'xl'
+  variant = 'blue',
+  size = 'md',
   disabled = false,
   className = '',
-  type = 'button',
+  ...props
 }) {
-  // Paletas de colores con efecto 3D (Fondo + Borde inferior/Sombra 3D + Texto)
+  const handleClick = (e) => {
+    if (disabled) return;
+    soundFx.playClick();
+    if (onClick) onClick(e);
+  };
+
   const variants = {
-    orange: 'bg-orange-500 hover:bg-orange-400 text-white shadow-[0_6px_0_#c2410c] active:shadow-[0_0px_0_#c2410c]',
-    green:  'bg-emerald-500 hover:bg-emerald-400 text-white shadow-[0_6px_0_#047857] active:shadow-[0_0px_0_#047857]',
-    blue:   'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_6px_0_#1e3a8a] active:shadow-[0_0px_0_#1e3a8a]',
-    yellow: 'bg-amber-400 hover:bg-amber-300 text-amber-950 shadow-[0_6px_0_#b45309] active:shadow-[0_0px_0_#b45309]',
-    red:    'bg-rose-500 hover:bg-rose-400 text-white shadow-[0_6px_0_#be123c] active:shadow-[0_0px_0_#be123c]',
-    purple: 'bg-purple-600 hover:bg-purple-500 text-white shadow-[0_6px_0_#6b21a8] active:shadow-[0_0px_0_#6b21a8]',
+    blue: 'bg-blue-500 hover:bg-blue-400 border-blue-700 text-white shadow-blue-900',
+    green: 'bg-emerald-500 hover:bg-emerald-400 border-emerald-700 text-white shadow-emerald-950',
+    amber: 'bg-amber-400 hover:bg-amber-300 border-amber-600 text-slate-950 shadow-amber-900',
+    purple: 'bg-purple-600 hover:bg-purple-500 border-purple-800 text-white shadow-purple-950',
+    red: 'bg-rose-600 hover:bg-rose-500 border-rose-800 text-white shadow-rose-950',
   };
 
-  // Tamaños disponibles
   const sizes = {
-    sm: 'py-2 px-4 text-sm rounded-xl',
-    md: 'py-3 px-6 text-base font-bold rounded-2xl',
-    lg: 'py-4 px-8 text-xl font-black rounded-2xl',
-    xl: 'py-5 px-10 text-3xl font-black rounded-3xl',
+    sm: 'px-3 py-1.5 text-xs rounded-xl border-b-4',
+    md: 'px-5 py-2.5 text-base rounded-2xl border-b-4',
+    lg: 'px-8 py-4 text-xl rounded-2xl border-b-6',
   };
-
-  const selectedVariant = variants[variant] || variants.orange;
-  const selectedSize = sizes[size] || sizes.md;
 
   return (
     <motion.button
-      type={type}
-      onClick={onClick}
+      whileHover={!disabled ? { scale: 1.02 } : {}}
+      whileTap={!disabled ? { y: 2, scale: 0.98 } : {}}
+      onClick={handleClick}
       disabled={disabled}
-      whileTap={disabled ? {} : { y: 6 }}
-      transition={{ type: 'spring', stiffness: 500, damping: 20 }}
       className={`
-        relative inline-flex items-center justify-center font-black select-none
-        transition-all duration-75 cursor-pointer touch-manipulation
-        disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-1.5
-        ${selectedVariant}
-        ${selectedSize}
+        font-black tracking-wide transition-colors border-b-4 shadow-lg flex items-center justify-center gap-2 select-none active:border-b-0 active:translate-y-1
+        ${variants[variant] || variants.blue}
+        ${sizes[size] || sizes.md}
+        ${disabled ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}
         ${className}
       `}
+      {...props}
     >
       {children}
     </motion.button>
