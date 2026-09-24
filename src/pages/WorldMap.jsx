@@ -1,128 +1,113 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../context/useGameStore';
-import { WORLDS } from '../data/worldsData';
 import HeaderHUD from '../components/layout/HeaderHUD';
 import Button3D from '../components/ui/Button3D';
 
+const WORLDS = [
+  { id: 'addition', name: 'Mundo Suma', icon: '➕', totalLevels: 5, color: 'from-emerald-500 to-teal-700' },
+  { id: 'subtraction', name: 'Mundo Resta', icon: '➖', totalLevels: 5, color: 'from-blue-500 to-indigo-700' },
+  { id: 'multiplication', name: 'Mundo Multiplicación', icon: '✖️', totalLevels: 5, color: 'from-purple-500 to-amber-600' },
+];
+
 export default function WorldMap({ onSelectLevel, onGoHome }) {
-  const { currentWorld, setWorld, setLevel, score } = useGameStore();
-  const [selectedWorldId, setSelectedWorldId] = useState(currentWorld || 'addition');
+  const { currentWorld, setWorld, setLevel, unlockedLevels = { addition: 1 } } = useGameStore();
 
-  const selectedWorld = WORLDS.find((w) => w.id === selectedWorldId) || WORLDS[0];
+  const activeWorld = WORLDS.find((w) => w.id === currentWorld) || WORLDS[0];
+  const maxUnlockedLevel = unlockedLevels[activeWorld.id] || 1;
 
-  const handleLevelClick = (levelNumber, isUnlocked) => {
-    if (!isUnlocked) return;
-    setWorld(selectedWorldId);
-    setLevel(levelNumber);
-    if (onSelectLevel) onSelectLevel(selectedWorldId, levelNumber);
+  const handleLevelClick = (levelNumber) => {
+    if (levelNumber <= maxUnlockedLevel) {
+      setLevel(levelNumber);
+      onSelectLevel();
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-blue-950 to-slate-900 text-white flex flex-col justify-between p-4 max-w-2xl mx-auto select-none">
-      {/* 1. CABECERA HUD */}
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white flex flex-col justify-between p-4 max-w-2xl mx-auto select-none overflow-hidden">
+      {/* HUD SUPERIOR */}
       <HeaderHUD />
 
-      <main className="my-auto flex flex-col items-center w-full my-4">
-        {/* TÍTULO PRINCIPAL */}
+      {/* SELECTOR DE MUNDOS */}
+      <div className="flex justify-center gap-2 my-3">
+        {WORLDS.map((world) => {
+          const isActive = world.id === activeWorld.id;
+          return (
+            <button
+              key={world.id}
+              onClick={() => setWorld(world.id)}
+              className={`
+                px-3 py-1.5 rounded-2xl text-xs font-black flex items-center gap-1.5 border-2 transition-all
+                ${isActive 
+                  ? 'bg-amber-400 text-slate-950 border-amber-300 scale-105 shadow-lg shadow-amber-500/20' 
+                  : 'bg-slate-900/80 border-slate-700 text-slate-300 hover:bg-slate-800'}
+              `}
+            >
+              <span>{world.icon}</span>
+              <span className="hidden sm:inline">{world.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* CAMINO DE NIVELES (ESTILO AVENTURA) */}
+      <main className="my-auto flex flex-col items-center justify-center relative py-6">
         <div className="text-center mb-6">
-          <span className="text-xs font-black text-amber-400 tracking-widest uppercase bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/30">
-            Mapa de Aventura
+          <span className="text-xs font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-full uppercase">
+            {activeWorld.name}
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-white mt-2 tracking-wide drop-shadow-md">
-            Elige tu Desafío
-          </h1>
+          <h2 className="text-2xl font-black text-amber-400 mt-1">Elige tu Desafío</h2>
         </div>
 
-        {/* 2. SELECCIÓN DE MUNDOS (PESTAÑAS) */}
-        <div className="flex gap-2 overflow-x-auto w-full pb-2 scrollbar-none justify-center">
-          {WORLDS.map((world) => {
-            const isActive = world.id === selectedWorldId;
+        {/* LISTA DE NIVELES EN SERPENTINA */}
+        <div className="flex flex-col items-center gap-6 relative w-full max-w-xs">
+          {Array.from({ length: activeWorld.totalLevels }).map((_, index) => {
+            const levelNum = index + 1;
+            const isUnlocked = levelNum <= maxUnlockedLevel;
+            const isCurrent = levelNum === maxUnlockedLevel;
+
+            // Offset alternado para simular camino en zig-zag
+            const offsetX = index % 2 === 0 ? '-translate-x-10 sm:-translate-x-12' : 'translate-x-10 sm:translate-x-12';
+
             return (
-              <button
-                key={world.id}
-                onClick={() => setSelectedWorldId(world.id)}
-                className={`
-                  flex items-center gap-2 px-4 py-2.5 rounded-2xl font-black text-sm transition-all duration-200 border-2 whitespace-nowrap
-                  ${isActive 
-                    ? 'bg-amber-400 text-slate-950 border-amber-300 scale-105 shadow-lg shadow-amber-500/20' 
-                    : 'bg-blue-900/60 text-blue-200 border-blue-700/50 hover:bg-blue-800/80'}
-                `}
-              >
-                <span className="text-xl">{world.icon}</span>
-                <span>{world.name}</span>
-              </button>
+              <div key={levelNum} className={`relative z-10 ${offsetX}`}>
+                <motion.div
+                  whileHover={isUnlocked ? { scale: 1.1 } : {}}
+                  whileTap={isUnlocked ? { scale: 0.95 } : {}}
+                >
+                  <button
+                    onClick={() => handleLevelClick(levelNum)}
+                    disabled={!isUnlocked}
+                    className={`
+                      w-20 h-20 rounded-full font-black text-2xl flex flex-col items-center justify-center border-4 shadow-xl relative transition-all
+                      ${isCurrent
+                        ? 'bg-gradient-to-b from-amber-300 to-amber-500 border-yellow-200 text-slate-950 ring-4 ring-amber-400/40 animate-bounce'
+                        : isUnlocked
+                          ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 border-emerald-300 text-white'
+                          : 'bg-slate-800/90 border-slate-700 text-slate-500 opacity-80 cursor-not-allowed'}
+                    `}
+                  >
+                    {isUnlocked ? (
+                      <>
+                        <span className="text-xl font-extrabold">{levelNum}</span>
+                        <div className="flex text-[10px] gap-0.5 mt-0.5">
+                          ⭐ ⭐ ⭐
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-2xl">🔒</span>
+                    )}
+                  </button>
+                </motion.div>
+              </div>
             );
           })}
         </div>
-
-        {/* 3. TARJETA DEL MUNDO SELECCIONADO */}
-        <motion.div
-          key={selectedWorld.id}
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full bg-blue-900/40 border-2 border-blue-500/30 rounded-3xl p-6 mt-4 backdrop-blur-sm"
-        >
-          <div className="flex items-center gap-3 mb-4 border-b border-blue-700/40 pb-3">
-            <span className="text-4xl">{selectedWorld.icon}</span>
-            <div>
-              <h2 className="text-2xl font-black text-amber-400">{selectedWorld.name}</h2>
-              <p className="text-xs text-blue-200 font-medium">{selectedWorld.description}</p>
-            </div>
-          </div>
-
-          {/* GRID DE NIVELES */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mt-6">
-            {selectedWorld.levels.map((lvl) => {
-              // Lógica básica de desbloqueo según puntaje acumulado
-              const isUnlocked = lvl.number === 1 || score >= (lvl.number - 1) * 30;
-
-              return (
-                <motion.button
-                  key={lvl.number}
-                  whileHover={isUnlocked ? { scale: 1.05 } : {}}
-                  whileTap={isUnlocked ? { scale: 0.95 } : {}}
-                  onClick={() => handleLevelClick(lvl.number, isUnlocked)}
-                  className={`
-                    relative aspect-square rounded-2xl flex flex-col items-center justify-center p-2 font-black border-b-4 transition-all
-                    ${isUnlocked 
-                      ? 'bg-gradient-to-b from-blue-500 to-blue-700 border-blue-900 text-white shadow-lg cursor-pointer' 
-                      : 'bg-slate-800/80 border-slate-950 text-slate-500 cursor-not-allowed opacity-75'}
-                  `}
-                >
-                  {isUnlocked ? (
-                    <>
-                      <span className="text-xs uppercase font-extrabold text-blue-200">Nivel</span>
-                      <span className="text-3xl font-black">{lvl.number}</span>
-                      
-                      {/* Estrellas mock/ejemplo */}
-                      <div className="flex gap-0.5 text-xs mt-1">
-                        <span>⭐</span>
-                        <span>⭐</span>
-                        <span className="opacity-40 grayscale">⭐</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-2xl mb-1">🔒</span>
-                      <span className="text-[10px] uppercase font-bold tracking-tighter text-slate-400">Bloqueado</span>
-                    </>
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
-        </motion.div>
       </main>
 
-      {/* 4. BOTÓN DE REGRESO */}
-      <footer className="w-full flex justify-center pt-4">
-        <Button3D
-          variant="purple"
-          size="md"
-          onClick={onGoHome}
-          className="w-full max-w-xs"
-        >
+      {/* FOOTER - VOLVER A HOME */}
+      <footer className="w-full flex justify-center pt-2">
+        <Button3D variant="purple" size="md" onClick={onGoHome} className="w-full max-w-xs">
           🏠 Menú Principal
         </Button3D>
       </footer>
