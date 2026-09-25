@@ -1,105 +1,89 @@
-// Helper de efectos de sonido usando Web Audio API nativo
-
-class SoundManager {
+// Sintetizador con Web Audio API puro
+class SoundEffects {
   constructor() {
     this.ctx = null;
-    this.muted = false;
+    this.isMuted = false;
+    this.bgmOscillator = null;
+    this.bgmGain = null;
   }
 
-  // Inicializa el contexto de audio en la primera interacción
-  initContext() {
+  init() {
     if (!this.ctx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx) {
-        this.ctx = new AudioCtx();
-      }
-    }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     }
   }
 
-  toggleMute() {
-    this.muted = !this.muted;
-    return this.muted;
+  toggleMute(muted) {
+    this.isMuted = muted;
   }
 
-  // 1. Clic en botón (tono corto y suave)
   playClick() {
-    if (this.muted) return;
-    this.initContext();
-    if (!this.ctx) return;
-
+    if (this.isMuted) return;
+    this.init();
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
-
     osc.type = 'sine';
     osc.frequency.setValueAtTime(400, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.05);
-
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
-
     osc.connect(gain);
     gain.connect(this.ctx.destination);
-
     osc.start();
     osc.stop(this.ctx.currentTime + 0.05);
   }
 
-  // 2. Respuesta Correcta / Victoria (arpegio ascendente alegre)
   playSuccess() {
-    if (this.muted) return;
-    this.initContext();
-    if (!this.ctx) return;
-
-    const notes = [523.25, 659.25, 783.99, 1046.5]; // Do, Mi, Sol, Do (C5-E5-G5-C6)
-    notes.forEach((freq, index) => {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      const startTime = this.ctx.currentTime + index * 0.08;
-
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, startTime);
-
-      gain.gain.setValueAtTime(0.2, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
-
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-
-      osc.start(startTime);
-      osc.stop(startTime + 0.25);
-    });
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(523.25, now); // C5
+    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.4);
   }
 
-  // 3. Respuesta Incorrecta / Error (dos tonos graves descendentes)
   playError() {
-    if (this.muted) return;
-    this.initContext();
-    if (!this.ctx) return;
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.linearRampToValueAtTime(110, now + 0.2);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  }
 
-    const frequencies = [220, 164.81]; // La2, Mi2
-    frequencies.forEach((freq, index) => {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      const startTime = this.ctx.currentTime + index * 0.12;
-
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(freq, startTime);
-
-      gain.gain.setValueAtTime(0.2, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
-
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-
-      osc.start(startTime);
-      osc.stop(startTime + 0.2);
-    });
+  playCoin() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(987.77, now); // B5
+    osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
   }
 }
 
-export const soundFx = new SoundManager();
+export const soundFx = new SoundEffects();
