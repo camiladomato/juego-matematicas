@@ -11,6 +11,10 @@ class SoundEffects {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    // Asegura que el AudioContext no quede suspendido por políticas de autoejecución del navegador
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
   }
 
   toggleMute(muted) {
@@ -83,6 +87,24 @@ class SoundEffects {
     gain.connect(this.ctx.destination);
     osc.start(now);
     osc.stop(now + 0.3);
+  }
+
+  // Sonido tipo "pop" al equipar un avatar
+  playEquip() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, now);
+    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
   }
 }
 
