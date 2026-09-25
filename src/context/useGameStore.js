@@ -23,6 +23,7 @@ export const useGameStore = create(
         subtraction: 1,
         multiplication: 1,
       },
+      timeAttackHighScore: 0,
 
       // --- ACCIONES Y MÉTODOS ---
 

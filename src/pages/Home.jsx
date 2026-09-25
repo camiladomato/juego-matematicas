@@ -6,7 +6,7 @@ import Button3D from '../components/ui/Button3D';
 
 const AVATARS = ['🐱', '🦊', '🐼', '🦁', '🚀', '🤖', '🦄', '🐲'];
 
-export default function Home({ onStartGame }) {
+export default function Home({ onStartGame, onStartTimeAttack }) {
   const { playerName, setPlayerName, selectedAvatar, setAvatar } = useGameStore();
   const [localName, setLocalName] = useState(playerName || '');
   const [activeAvatar, setActiveAvatar] = useState(selectedAvatar || '🐱');
@@ -120,15 +120,24 @@ export default function Home({ onStartGame }) {
         </div>
       </main>
 
-      {/* 4. BOTÓN DE JUGAR */}
-      <footer className="w-full flex justify-center mb-2">
+      {/* 4. BOTONES DE ACCIÓN */}
+      <footer className="w-full flex flex-col gap-3 justify-center mb-2">
         <Button3D
           variant="green"
           size="lg"
           onClick={onStartGame}
-          className="w-full text-xl py-4"
+          className="w-full text-xl py-3.5"
         >
-          🎮 ¡JUGAR AHORA!
+          🎮 Modo Aventura
+        </Button3D>
+
+        <Button3D 
+          variant="amber" 
+          size="lg" 
+          onClick={onStartTimeAttack}
+          className="w-full flex items-center justify-center gap-2 text-lg font-black py-3.5"
+        >
+          ⚡️ Desafío Contra Reloj
         </Button3D>
       </footer>
     </div>
