@@ -83,13 +83,16 @@ const sanitizeProgress = (data) => {
 export const useGameStore = create((set, get) => ({
   ...INITIAL_PROGRESS,
   recentlyUnlockedAchievement: null, // Para mostrar la notificación del logro
+  // true cuando el progreso ya se leyó de Firestore; antes de eso no se guarda,
+  // para no pisar el progreso de la nube con el estado inicial (modo fallback)
+  cloudLoaded: false,
 
   // --- PERSISTENCIA EN LA NUBE ---
 
   // Guardar estado en Firestore para el usuario actual
   saveToCloud: async () => {
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user || !get().cloudLoaded) return;
 
     try {
       const state = get();
@@ -112,10 +115,12 @@ export const useGameStore = create((set, get) => ({
     try {
       const docSnap = await getDoc(doc(db, 'players', user.uid));
 
+      // Si la carga llega tarde (después del fallback), la nube tiene prioridad
       if (docSnap.exists()) {
-        set(sanitizeProgress(docSnap.data()));
+        set({ ...sanitizeProgress(docSnap.data()), cloudLoaded: true });
       } else {
         // Si el usuario es nuevo, creamos su documento inicial
+        set({ cloudLoaded: true });
         await get().saveToCloud();
       }
     } catch (error) {

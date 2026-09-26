@@ -22,7 +22,7 @@ export default function App() {
     let isMounted = true;
 
     const timeoutFallback = setTimeout(() => {
-      if (isMounted && loading) {
+      if (isMounted) {
         console.warn('Carga de Firebase en fallback local.');
         setLoading(false);
       }
@@ -71,7 +71,7 @@ export default function App() {
       {currentScreen === 'worldMap' && (
         <WorldMap
           onSelectLevel={() => setCurrentScreen('gameplay')}
-          onBackToMenu={() => setCurrentScreen('home')}
+          onGoHome={() => setCurrentScreen('home')}
         />
       )}
 

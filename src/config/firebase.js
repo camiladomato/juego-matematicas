@@ -23,8 +23,8 @@ export const initAuth = (onUserReady) => {
       onUserReady(user);
     } else {
       try {
-        const cred = await signInAnonymously(auth);
-        onUserReady(cred.user);
+        // onAuthStateChanged vuelve a dispararse con el usuario nuevo, y ahí se llama a onUserReady
+        await signInAnonymously(auth);
       } catch (error) {
         console.error("Error al iniciar sesión anónima en Firebase:", error);
         onUserReady(null);
