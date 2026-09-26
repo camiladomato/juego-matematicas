@@ -1,77 +1,89 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import { db, auth } from '../config/firebase';
 
-// Adaptador customizado de almacenamiento para Firestore
-const firestoreStorage = {
-  getItem: async (name) => {
-    const user = auth.currentUser;
-    if (!user) return null;
+const INITIAL_STATE = {
+  playerName: 'Aventurero',
+  coins: 0,
+  stars: 0,
+  lives: 3,
+  currentLevel: 1,
+  unlockedLevels: [1],
+  inventory: [],
+  selectedAvatar: '🧒',
+};
 
-    const docRef = doc(db, 'players', user.uid);
-    const docSnap = await getDoc(docRef);
+export const useGameStore = create((set, get) => ({
+  ...INITIAL_STATE,
 
-    if (docSnap.exists()) {
-      return JSON.stringify({ state: docSnap.data() });
-    }
-    return null;
-  },
-  setItem: async (name, value) => {
+  // Guardar estado en Firestore para el usuario actual
+  saveToCloud: async () => {
     const user = auth.currentUser;
     if (!user) return;
 
-    const parsed = JSON.parse(value);
-    const docRef = doc(db, 'players', user.uid);
+    try {
+      const state = get();
+      const playerData = {
+        playerName: state.playerName,
+        coins: state.coins,
+        stars: state.stars,
+        lives: state.lives,
+        currentLevel: state.currentLevel,
+        unlockedLevels: state.unlockedLevels,
+        inventory: state.inventory,
+        selectedAvatar: state.selectedAvatar,
+        updatedAt: new Date(),
+      };
 
-    // Guardamos el estado limpio en la colección "players"
-    await setDoc(docRef, parsed.state, { merge: true });
-  },
-  removeItem: async (name) => {
-    // Lógica opcional para limpiar
-  },
-};
-
-export const useGameStore = create(
-  persist(
-    (set) => ({
-      playerName: 'Jugador 1',
-      selectedAvatar: '🦊',
-      coins: 0,
-      stars: 0,
-      lives: 3,
-      currentWorld: 'addition',
-      currentLevel: 1,
-      unlockedLevels: { addition: 1, subtraction: 1, multiplication: 1 },
-      timeAttackHighScore: 0,
-      unlockedAchievements: [],
-
-      setPlayerName: (name) => set({ playerName: name }),
-      setSelectedAvatar: (avatar) => set({ selectedAvatar: avatar }),
-      addCoins: (amount) => set((state) => ({ coins: state.coins + amount })),
-      addStars: (amount) => set((state) => ({ stars: state.stars + amount })),
-      loseLife: () => set((state) => ({ lives: Math.max(0, state.lives - 1) })),
-      resetLives: () => set({ lives: 3 }),
-      setLevel: (level) => set({ currentLevel: level }),
-      setWorld: (world) => set({ currentWorld: world }),
-      unlockNextLevel: (world, nextLevel) =>
-        set((state) => ({
-          unlockedLevels: {
-            ...state.unlockedLevels,
-            [world]: Math.max(state.unlockedLevels[world] || 1, nextLevel),
-          },
-        })),
-      updateTimeAttackHighScore: (score) =>
-        set((state) => ({ timeAttackHighScore: Math.max(state.timeAttackHighScore, score) })),
-      unlockAchievement: (id) =>
-        set((state) => {
-          if (state.unlockedAchievements.includes(id)) return state;
-          return { unlockedAchievements: [...state.unlockedAchievements, id] };
-        }),
-    }),
-    {
-      name: 'mate-aventura-cloud',
-      storage: firestoreStorage,
+      await setDoc(doc(db, 'players', user.uid), playerData, { merge: true });
+    } catch (error) {
+      console.error('Error al guardar en Firestore:', error);
     }
-  )
-);
+  },
+
+  // Cargar estado desde Firestore al iniciar sesión
+  loadFromCloud: async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const userDocRef = doc(db, 'players', user.uid);
+      const docSnap = await getDoc(userDocRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        set({ ...data });
+      } else {
+        // Si el usuario es nuevo, creamos su documento inicial
+        await get().saveToCloud();
+      }
+    } catch (error) {
+      console.error('Error al cargar de Firestore:', error);
+    }
+  },
+
+  // Acciones del juego (todas guardan en la nube al ejecutarse)
+  addCoins: (amount) => {
+    set((state) => ({ coins: state.coins + amount }));
+    get().saveToCloud();
+  },
+
+  addStars: (amount) => {
+    set((state) => ({ stars: state.stars + amount }));
+    get().saveToCloud();
+  },
+
+  unlockNextLevel: (levelId) => {
+    set((state) => ({
+      unlockedLevels: state.unlockedLevels.includes(levelId)
+        ? state.unlockedLevels
+        : [...state.unlockedLevels, levelId],
+    }));
+    get().saveToCloud();
+  },
+
+  resetLives: () => {
+    set({ lives: 3 });
+    get().saveToCloud();
+  },
+}));
