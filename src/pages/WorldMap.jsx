@@ -11,7 +11,7 @@ const WORLDS = [
 ];
 
 export default function WorldMap({ onSelectLevel, onGoHome }) {
-  const { currentWorld, setWorld, setLevel, unlockedLevels = { addition: 1 } } = useGameStore();
+  const { currentWorld, setWorld, setLevel, unlockedLevels , resetLives = { addition: 1 } } = useGameStore();
 
   const activeWorld = WORLDS.find((w) => w.id === currentWorld) || WORLDS[0];
   const maxUnlockedLevel = unlockedLevels[activeWorld.id] || 1;
@@ -19,6 +19,7 @@ export default function WorldMap({ onSelectLevel, onGoHome }) {
   const handleLevelClick = (levelNumber) => {
     if (levelNumber <= maxUnlockedLevel) {
       setLevel(levelNumber);
+      resetLives();
       onSelectLevel();
     }
   };

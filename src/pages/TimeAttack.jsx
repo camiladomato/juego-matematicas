@@ -5,6 +5,7 @@ import { useGameStore } from '../context/useGameStore';
 import { generateQuestion } from '../data/worldsData';
 import { soundFx } from '../utils/sound';
 import Button3D from '../components/ui/Button3D';
+import HeaderHUD from '../components/layout/HeaderHUD';
 
 const GAME_DURATION = 60; // 60 segundos
 
@@ -12,6 +13,7 @@ export default function TimeAttack({ onBackToMenu }) {
   const timeAttackHighScore = useGameStore((state) => state.timeAttackHighScore || 0);
   const updateTimeAttackHighScore = useGameStore((state) => state.updateTimeAttackHighScore);
   const addCoins = useGameStore((state) => state.addCoins);
+  const resetLives = useGameStore((state) => state.resetLives);
 
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [score, setScore] = useState(0);
@@ -32,8 +34,9 @@ export default function TimeAttack({ onBackToMenu }) {
     setSelectedOption(null);
   };
 
-  // Iniciar juego
+  // Iniciar juego y restablecer salud
   const startGame = () => {
+    resetLives(); // 👈 Rellena la salud a 3 vidas al iniciar
     setScore(0);
     setTimeLeft(GAME_DURATION);
     setGameState('playing');
@@ -111,11 +114,16 @@ export default function TimeAttack({ onBackToMenu }) {
   if (gameState === 'idle') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-900 text-white flex flex-col items-center justify-center p-6 text-center select-none">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-w-md w-full bg-slate-900/80 border-2 border-amber-400/50 rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-5">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="max-w-md w-full bg-slate-900/80 border-2 border-amber-400/50 rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-5"
+        >
           <div className="text-6xl animate-bounce">⚡️</div>
           <h1 className="text-3xl font-black text-amber-400">Modo Contra Reloj</h1>
           <p className="text-sm text-slate-300">
-            Responde la mayor cantidad de operaciones en <span className="font-bold text-amber-300">60 segundos</span>. ¡Gana 2 monedas por cada acierto!
+            Responde la mayor cantidad de operaciones en{' '}
+            <span className="font-bold text-amber-300">60 segundos</span>. ¡Gana 2 monedas por cada acierto!
           </p>
 
           <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 w-full flex justify-between items-center">
@@ -141,7 +149,11 @@ export default function TimeAttack({ onBackToMenu }) {
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-900 text-white flex flex-col items-center justify-center p-6 text-center select-none">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-w-md w-full bg-slate-900/80 border-2 border-amber-400/50 rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-5">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="max-w-md w-full bg-slate-900/80 border-2 border-amber-400/50 rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-5"
+        >
           <div className="text-6xl">{isNewRecord ? '👑' : '⏰'}</div>
           <h2 className="text-3xl font-black text-amber-400">
             {isNewRecord ? '¡Nuevo Récord!' : '¡Tiempo Agotado!'}
@@ -174,16 +186,23 @@ export default function TimeAttack({ onBackToMenu }) {
   // 3. PANTALLA DE JUEGO (PLAYING)
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-900 text-white flex flex-col justify-between p-4 max-w-2xl mx-auto select-none">
-      {/* HUD SUPERIOR */}
-      <div className="flex justify-between items-center bg-slate-900/80 p-4 rounded-3xl border border-slate-700 shadow-lg">
+      {/* HUD PRINCIPAL (MOSTRANDO CORAZONES Y AVATAR RESTABLECIDOS) */}
+      <HeaderHUD />
+
+      {/* BARRA DE TIEMPO Y PUNTOS DE LA PARTIDA */}
+      <div className="flex justify-between items-center bg-slate-900/80 p-3 rounded-2xl border border-slate-700/80 shadow-lg my-2">
         <div className="flex items-center gap-2">
           <span className="text-2xl">⏳</span>
-          <span className={`text-2xl font-black ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-amber-400'}`}>
+          <span
+            className={`text-2xl font-black ${
+              timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-amber-400'
+            }`}
+          >
             {timeLeft}s
           </span>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-950/60 px-4 py-1.5 rounded-2xl border border-slate-800">
+        <div className="flex items-center gap-2 bg-slate-950/60 px-4 py-1 rounded-xl border border-slate-800">
           <span className="text-slate-400 font-bold text-xs">PUNTOS</span>
           <span className="text-2xl font-black text-amber-300">{score}</span>
         </div>
@@ -191,7 +210,7 @@ export default function TimeAttack({ onBackToMenu }) {
 
       {/* PREGUNTA */}
       {question && (
-        <main className="my-auto flex flex-col items-center w-full my-4">
+        <main className="my-auto flex flex-col items-center w-full my-2">
           <motion.div
             key={question.text}
             initial={{ scale: 0.95, opacity: 0 }}
