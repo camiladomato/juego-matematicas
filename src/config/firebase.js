@@ -1,29 +1,37 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 
-// Reemplazá con los datos de tu consola de Firebase
+// Configuración con tus claves reales de Firebase
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "tu-app.firebaseapp.com",
-  projectId: "tu-app-id",
-  storageBucket: "tu-app.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyDWSzSHwbwGh0tUzf4uJlQgfrUyP7hi-to",
+  authDomain: "mate-aventura-f3547.firebaseapp.com",
+  projectId: "mate-aventura-f3547",
+  storageBucket: "mate-aventura-f3547.firebasestorage.app",
+  messagingSenderId: "450863974192",
+  appId: "1:450863974192:web:58b17cffa2c6c58fad2af5",
+  measurementId: "G-3GRQ0T2Z4G"
 };
 
+// Inicialización de Firebase
 const app = initializeApp(firebaseConfig);
+
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Iniciar sesión anónima si el jugador no tiene cuenta iniciada
+// Manejador de Autenticación
 export const initAuth = (onUserReady) => {
   return onAuthStateChanged(auth, async (user) => {
     if (user) {
       onUserReady(user);
     } else {
-      const cred = await signInAnonymously(auth);
-      onUserReady(cred.user);
+      try {
+        const cred = await signInAnonymously(auth);
+        onUserReady(cred.user);
+      } catch (error) {
+        console.error("Error al iniciar sesión anónima en Firebase:", error);
+        onUserReady(null);
+      }
     }
   });
 };
