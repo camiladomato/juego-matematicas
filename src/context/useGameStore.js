@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
+import { soundFx } from '../utils/sound';
 
 export const ACHIEVEMENTS_LIST = [
   {
@@ -73,6 +74,7 @@ const INITIAL_PROGRESS = {
   currentLevel: 1,
   unlockedLevels: { addition: 1, subtraction: 1, multiplication: 1 },
   timeAttackHighScore: 0,
+  soundMuted: false,
 };
 
 const PROGRESS_KEYS = Object.keys(INITIAL_PROGRESS);
@@ -248,14 +250,27 @@ export const useGameStore = create((set, get) => ({
     get().saveToCloud();
   },
 
-  // Reinicio general del progreso (conserva el nombre del jugador)
+  setSoundMuted: (muted) => {
+    set({ soundMuted: muted });
+    get().saveToCloud();
+  },
+
+  // Reinicio general del progreso (conserva el nombre del jugador y el sonido)
   resetGame: () => {
     set({
       ...INITIAL_PROGRESS,
       playerName: get().playerName,
       hasSetName: get().hasSetName,
+      soundMuted: get().soundMuted,
       recentlyUnlockedAchievement: null,
     });
     get().saveToCloud();
   },
 }));
+
+// El silencio vive en el store (y en Firestore); soundFx siempre refleja el valor actual,
+// también cuando llega desde la nube al iniciar
+soundFx.setMuted(useGameStore.getState().soundMuted);
+useGameStore.subscribe((state, prev) => {
+  if (state.soundMuted !== prev.soundMuted) soundFx.setMuted(state.soundMuted);
+});

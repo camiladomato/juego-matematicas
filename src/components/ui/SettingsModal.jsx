@@ -5,15 +5,15 @@ import { useGameStore } from '../../context/useGameStore';
 import Button3D from './Button3D';
 
 export default function SettingsModal({ isOpen, onClose }) {
-  const { resetGame } = useGameStore();
-  const [isMuted, setIsMuted] = useState(soundFx.muted);
+  const { resetGame, soundMuted: isMuted, setSoundMuted } = useGameStore();
   const [showConfirmReset, setShowConfirmReset] = useState(false);
 
   if (!isOpen) return null;
 
   const handleToggleMute = () => {
-    const mutedState = soundFx.toggleMute();
-    setIsMuted(mutedState);
+    setSoundMuted(!isMuted);
+    // Al activar, un sonido de confirmación (Button3D hace su clic antes del cambio)
+    if (isMuted) soundFx.playClick();
   };
 
   const handleResetProgress = () => {
