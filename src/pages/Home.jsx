@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useGameStore } from '../context/useGameStore';
+import { useGameStore, PLAYER_NAME_MAX } from '../context/useGameStore';
 import Button3D from '../components/ui/Button3D';
 import HeaderHUD from '../components/layout/HeaderHUD';
 
@@ -10,7 +10,13 @@ export default function Home({
   onOpenShop,
   onOpenAchievements,
 }) {
-  const { selectedAvatar, playerName, setPlayerName } = useGameStore();
+  const { selectedAvatar, playerName, confirmPlayerName } = useGameStore();
+
+  // Guarda al salir del campo; si el nombre no es válido, vuelve al anterior
+  const handleNameBlur = (e) => {
+    const trimmed = e.target.value.trim();
+    if (trimmed === playerName || !confirmPlayerName(trimmed)) e.target.value = playerName;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-900 text-white flex flex-col justify-between items-center p-4 max-w-2xl mx-auto select-none">
@@ -49,9 +55,12 @@ export default function Home({
         {/* NOMBRE DEL JUGADOR */}
         <div className="flex flex-col items-center gap-1 w-full max-w-xs">
           <input
+            key={playerName}
             type="text"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
+            defaultValue={playerName}
+            onBlur={handleNameBlur}
+            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+            maxLength={PLAYER_NAME_MAX}
             placeholder="Tu nombre"
             className="w-full text-center bg-slate-900/80 border-2 border-slate-700 focus:border-amber-400 rounded-2xl py-2 px-4 font-black text-amber-300 placeholder-slate-500 outline-none transition-all shadow-inner text-lg"
           />

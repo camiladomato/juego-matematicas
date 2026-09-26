@@ -45,9 +45,21 @@ export const ACHIEVEMENTS_LIST = [
   },
 ];
 
+export const PLAYER_NAME_MIN = 2;
+export const PLAYER_NAME_MAX = 15;
+
+export const isValidPlayerName = (name) => {
+  const trimmed = name.trim();
+  return trimmed.length >= PLAYER_NAME_MIN && trimmed.length <= PLAYER_NAME_MAX;
+};
+
+// Nombres por defecto de esta versión y de versiones anteriores del store
+const DEFAULT_PLAYER_NAMES = ['Aventurero', 'Jugador', 'Jugador 1'];
+
 // Progreso que se guarda en Firestore (todo lo demás es estado de sesión)
 const INITIAL_PROGRESS = {
   playerName: 'Aventurero',
+  hasSetName: false, // false = mostrar el modal de bienvenida
   selectedAvatar: '🐱',
   unlockedAvatars: ['🐱', '🦊'],
   unlockedAchievements: [],
@@ -75,6 +87,12 @@ const sanitizeProgress = (data) => {
   // Una versión anterior guardaba unlockedLevels como array; se vuelve al formato por mundo
   if (progress.unlockedLevels && Array.isArray(progress.unlockedLevels)) {
     progress.unlockedLevels = { ...INITIAL_PROGRESS.unlockedLevels };
+  }
+
+  // Documentos anteriores a hasSetName: se considera elegido si el nombre no es uno por defecto
+  if (progress.hasSetName === undefined) {
+    const name = (progress.playerName || '').trim();
+    progress.hasSetName = name !== '' && !DEFAULT_PLAYER_NAMES.includes(name);
   }
 
   return progress;
@@ -153,9 +171,13 @@ export const useGameStore = create((set, get) => ({
 
   // --- ACCIONES DEL JUEGO (todas guardan en la nube al ejecutarse) ---
 
-  setPlayerName: (name) => {
-    set({ playerName: name });
+  // Guarda el nombre elegido (modal de bienvenida o edición en Home); ignora nombres inválidos
+  confirmPlayerName: (name) => {
+    if (!isValidPlayerName(name)) return false;
+
+    set({ playerName: name.trim(), hasSetName: true });
     get().saveToCloud();
+    return true;
   },
 
   setAvatar: (avatar) => {
@@ -231,6 +253,7 @@ export const useGameStore = create((set, get) => ({
     set({
       ...INITIAL_PROGRESS,
       playerName: get().playerName,
+      hasSetName: get().hasSetName,
       recentlyUnlockedAchievement: null,
     });
     get().saveToCloud();

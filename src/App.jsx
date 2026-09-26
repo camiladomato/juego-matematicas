@@ -9,6 +9,7 @@ import TimeAttack from './pages/TimeAttack';
 import ShopModal from './components/ui/ShopModal';
 import AchievementsModal from './components/ui/AchievementsModal';
 import AchievementToast from './components/ui/AchievementToast';
+import WelcomeModal from './components/ui/WelcomeModal';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('home');
@@ -17,6 +18,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   const loadFromCloud = useGameStore((state) => state.loadFromCloud);
+  // Solo se pide el nombre cuando ya se leyó la nube, para no pedírselo a quien ya lo tiene guardado
+  const needsWelcome = useGameStore((state) => state.cloudLoaded && !state.hasSetName);
 
   useEffect(() => {
     let isMounted = true;
@@ -58,6 +61,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-amber-400 selection:text-slate-900 font-sans">
       <AchievementToast />
+      {needsWelcome && <WelcomeModal />}
 
       {currentScreen === 'home' && (
         <Home
