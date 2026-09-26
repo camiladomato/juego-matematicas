@@ -2,24 +2,21 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Configuración con tus claves reales de Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyDWSzSHwbwGh0tUzf4uJlQgfrUyP7hi-to",
-  authDomain: "mate-aventura-f3547.firebaseapp.com",
-  projectId: "mate-aventura-f3547",
-  storageBucket: "mate-aventura-f3547.firebasestorage.app",
-  messagingSenderId: "450863974192",
-  appId: "1:450863974192:web:58b17cffa2c6c58fad2af5",
-  measurementId: "G-3GRQ0T2Z4G"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Inicialización de Firebase
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Manejador de Autenticación
 export const initAuth = (onUserReady) => {
   return onAuthStateChanged(auth, async (user) => {
     if (user) {
